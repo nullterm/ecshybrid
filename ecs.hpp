@@ -55,7 +55,7 @@ T * getComponent(Entity * entity) {
 }
 
 template<typename T>
-std::vector<T *> getComponents() {
+std::vector<T *> getAllComponents() {
 	std::vector<T *> list;
 	for ( Entity * entity : entities )
 		if ( T * component = getComponent<T>( entity ) )

@@ -3,16 +3,18 @@
 template<typename T>
 struct Pool {
 
+	static const int BLOCK_SIZE = sizeof(T);
+	static const int MAX_COUNT = 256;
+
 	struct Node {
 		bool allocated = false;
-		unsigned char data[sizeof(T)];
+		unsigned char data[BLOCK_SIZE];
 	};
 
-	static const int SIZE = 256;
+	Node nodes[MAX_COUNT];
 
-	Node nodes[SIZE];
-
-	void * allocate() {
+	void * allocate(size_t size) {
+		assert( size <= BLOCK_SIZE );
 		for ( Node & n : nodes ) {
 			if ( n.allocated ) continue;
 			n.allocated = true;
@@ -59,7 +61,7 @@ struct Pool {
 		}
 
 		void skipEmpty() {
-			while ( index < SIZE ) {
+			while ( index < MAX_COUNT ) {
 				if ( pool->nodes[index].allocated )
 					return;
 				index++;
@@ -75,7 +77,7 @@ struct Pool {
 	}
 
 	iterator end() {
-		iterator iter{ this, SIZE };
+		iterator iter{ this, MAX_COUNT };
 		return iter;
 	}
 
