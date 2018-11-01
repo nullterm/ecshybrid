@@ -3,13 +3,22 @@ C++ ECS hybrid system for games
 
 # Files
 
-ecsproto.cpp - Main example program.
+## ecsproto.cpp 
+- Main example program.
 
-ecs.hpp - Main ECS header.
-ecs.cpp - Global data and function implementations.
-ecsentity.hpp - ECS entity.
-ecscomponent.hpp - ECS component base.
-ecspool.hpp - Template class to allocate objects.
+## ecs.hpp 
+- Main ECS header.
+## ecs.cpp 
+- Global data and function implementations.
+
+## ecsentity.hpp 
+- ECS entity.
+
+## ecscomponent.hpp 
+- ECS component base.
+
+## ecspool.hpp 
+- Template class to allocate objects.
 
 # Classes
 
