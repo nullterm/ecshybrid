@@ -1,5 +1,7 @@
+#include <assert.h>
 #include <stdio.h>
 
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
 
@@ -8,11 +10,10 @@ static int nextEntityId = 0;
 struct Entity;
 struct Component;
 
-using EntityList = std::vector<Entity *>;
-using ComponentList = std::vector<Component *>;
+using EntityList = std::unordered_set<Entity *>;
+using ComponentList = std::unordered_set<Component *>;
 
 EntityList entities;
-ComponentList components;
 
 struct Component {
 
@@ -38,7 +39,7 @@ struct Entity {
 		id = nextEntityId;
 		nextEntityId++;
 		printf( "construct Entity %d\n", id );
-		entities.push_back( this );
+		entities.insert( this );
 	}
 
 	~Entity() {
@@ -63,43 +64,65 @@ struct Face : Component {
 
 template< typename T1, typename T2 >
 void remove(T1 & list, T2 value) {
+	list.erase( value );
 	//printf( "remove before %d\n", list.size() );
-	auto first = std::remove( list.begin(), list.end(), value );
-	list.erase( first, list.end() );
+	//auto first = std::remove( list.begin(), list.end(), value );
+	//list.erase( first, list.end() );
 	//printf( "remove after %d\n", list.size() );
 }
 
-void destroy(Component * component) {
-	//printf( "destroy Component %x\n", (unsigned int)component );
+void destroyNoRemove(Component * component) {
+	printf( "destroyNoRemove Component %x\n", (unsigned int)component );
 	if ( component == nullptr ) return;
-	remove( components, component );
-	if ( Entity * e = component->entity ) {
-		remove( e->components, component );
-	}
 	delete component;
+	printf( "destroyNoRemove Component %x done\n", (unsigned int)component );
+}
+
+void destroy(Component * component) {
+	if ( component == nullptr ) return;
+	if ( Entity * e = component->entity )
+		remove( e->components, component );
+	destroyNoRemove( component );
 }
 
 template<typename T>
 void destroyAll(T & list) {
+	
 	//printf( "destroyAll %d\n", list.size() );
-	while ( list.size() > 0 )
-		destroy( list[0] );
+
+	// was for vector
+	//while ( list.size() > 0 )
+	//	destroy( list[0] );
+
+	for ( auto value : list )
+		destroyNoRemove( value );
+
+	//printf( "destroyAll %d half\n", list.size() );
+
+	list.clear();
+
+	//printf( "destroyAll %d done\n", list.size() );
+
+}
+
+void destroyNoRemove(Entity * entity) {
+	if ( entity == nullptr ) return;
+	destroyAll( entity->components );
+	delete entity;
 }
 
 void destroy(Entity * entity) {
-	//printf( "destroy Entity\n");
+	printf( "destroy Entity\n");
 	if ( entity == nullptr ) return;
 	remove( entities, entity );
-	destroyAll( entity->components );
-	delete entity;
+	destroyNoRemove( entity );
 }
 
 template<typename T>
 T * addComponent(Entity * entity) {
 	T * component = new T();
 	component->entity = entity;
-	components.push_back( component );
-	entity->components.push_back( component );
+	entity->components.insert( component );
 	return component;
 }
 
@@ -121,9 +144,10 @@ std::vector<T *> getComponents() {
 }
 
 int main() {
+
 	printf( "ecshybrid.cpp - Blaine Hodge <blaine@stingergames.com>\n" );
 
-	for ( int i =0; i < 8; i++ ) {
+	for ( int i = 0; i < 8; i++ ) {
 		Entity * e = new Entity();
 		if ( rand() % 10 < 5 ) {
 			Face * face = addComponent<Face>( e );
@@ -136,5 +160,8 @@ int main() {
 
 	destroyAll( entities );
 
+	assert( entities.size() == 0 );
+
 	return 0;
+
 }
