@@ -75,7 +75,9 @@ struct Pool {
 		unsigned char data[sizeof(T)];
 	};
 
-	Node nodes[256];
+	static const int SIZE = 256;
+
+	Node nodes[SIZE];
 
 	void * allocate() {
 		for ( Node & n : nodes ) {
@@ -102,6 +104,46 @@ struct Pool {
 				f( (T *)n.data );
 			}
 		}
+	}
+
+	struct iterator {
+
+		Pool * pool;
+		int index;
+
+		T * operator *() {
+			return (T *)pool->nodes[index].data;
+		}
+
+		iterator & operator ++() {
+			index++;
+			skipEmpty();
+			return *this;
+		}
+
+		bool operator !=(const iterator & other) const {
+			return index < other.index;
+		}
+
+		void skipEmpty() {
+			while ( index < SIZE ) {
+				if ( pool->nodes[index].allocated )
+					return;
+				index++;
+			}
+		}
+
+	};
+
+	iterator begin() {
+		iterator iter{ this, 0 };
+		iter.skipEmpty();
+		return iter;
+	}
+
+	iterator end() {
+		iterator iter{ this, SIZE };
+		return iter;
 	}
 
 };
@@ -200,6 +242,10 @@ int main() {
 		delete saved;
 
 	for ( auto face : getComponents<Face>() ) {
+		printf( "update face=%d entity %d\n", face->mouth, face->entity->id );
+	}
+
+	for ( auto face : Face::pool ) {
 		printf( "update face=%d entity %d\n", face->mouth, face->entity->id );
 	}
 
