@@ -14,17 +14,35 @@ using EntityList = std::unordered_set<Entity *>;
 using ComponentList = std::unordered_set<Component *>;
 
 EntityList entities;
+ComponentList components;
+
+void destroy(Entity * entity);
+void destroy(Component * component);
+
+template<typename T>
+void destroyAll(T & list) {
+
+	// we make a copy so that when removed from list, list isn't invalidated
+	T copy = list;
+
+	for ( auto value : copy )
+		destroy( value );
+
+	list.clear();
+
+}
 
 struct Component {
 
 	Entity * entity = nullptr;
 
-	Component() {
-		//printf( "construct Component\n" );
+	Component(Entity * e) {
+		entity = e;
+		components.insert( this );
 	}
 
 	virtual ~Component() {
-		//printf( "destruct Component\n" );
+		components.erase( this );
 	}
 
 };
@@ -43,7 +61,8 @@ struct Entity {
 	}
 
 	~Entity() {
-		//printf( "destruct Entity %d\n", id );
+		destroyAll( components );
+		entities.erase( this );
 	}
 
 };
@@ -52,12 +71,13 @@ struct Face : Component {
 
 	int mouth = 0;
 
-	Face() {
-		printf( "construct Face\n" );
+	Face(Entity * e) : Component( e ) {
+		printf( "construct Face entity %d\n", entity->id );
+		mouth = rand() % 100;
 	}
 
 	virtual ~Face() {
-		//printf( "destruct Face\n" );
+		printf( "destruct Face entity %d\n", entity->id );
 	}
 
 };
@@ -65,62 +85,26 @@ struct Face : Component {
 template< typename T1, typename T2 >
 void remove(T1 & list, T2 value) {
 	list.erase( value );
-	//printf( "remove before %d\n", list.size() );
-	//auto first = std::remove( list.begin(), list.end(), value );
-	//list.erase( first, list.end() );
-	//printf( "remove after %d\n", list.size() );
-}
-
-void destroyNoRemove(Component * component) {
-	printf( "destroyNoRemove Component %x\n", (unsigned int)component );
-	if ( component == nullptr ) return;
-	delete component;
-	printf( "destroyNoRemove Component %x done\n", (unsigned int)component );
 }
 
 void destroy(Component * component) {
 	if ( component == nullptr ) return;
 	if ( Entity * e = component->entity )
 		remove( e->components, component );
-	destroyNoRemove( component );
-}
-
-template<typename T>
-void destroyAll(T & list) {
-	
-	//printf( "destroyAll %d\n", list.size() );
-
-	// was for vector
-	//while ( list.size() > 0 )
-	//	destroy( list[0] );
-
-	for ( auto value : list )
-		destroyNoRemove( value );
-
-	//printf( "destroyAll %d half\n", list.size() );
-
-	list.clear();
-
-	//printf( "destroyAll %d done\n", list.size() );
-
-}
-
-void destroyNoRemove(Entity * entity) {
-	if ( entity == nullptr ) return;
-	destroyAll( entity->components );
-	delete entity;
+	delete component;
 }
 
 void destroy(Entity * entity) {
 	printf( "destroy Entity\n");
 	if ( entity == nullptr ) return;
 	remove( entities, entity );
-	destroyNoRemove( entity );
+	destroyAll( entity->components );
+	delete entity;
 }
 
 template<typename T>
 T * addComponent(Entity * entity) {
-	T * component = new T();
+	T * component = new T( entity );
 	component->entity = entity;
 	entity->components.insert( component );
 	return component;
@@ -147,15 +131,25 @@ int main() {
 
 	printf( "ecshybrid.cpp - Blaine Hodge <blaine@stingergames.com>\n" );
 
+	Entity * saved = nullptr;
+
 	for ( int i = 0; i < 8; i++ ) {
 		Entity * e = new Entity();
 		if ( rand() % 10 < 5 ) {
 			Face * face = addComponent<Face>( e );
+			saved = e;
 		}
 	}
 
 	for ( auto face : getComponents<Face>() ) {
-		printf( "update face entity %d\n", face->entity->id );
+		printf( "update face=%d entity %d\n", face->mouth, face->entity->id );
+	}
+
+	if ( saved )
+		delete saved;
+
+	for ( auto face : getComponents<Face>() ) {
+		printf( "update face=%d entity %d\n", face->mouth, face->entity->id );
 	}
 
 	destroyAll( entities );
