@@ -20,7 +20,10 @@ ecspool.hpp - Template class to allocate objects.
 - base class that components inherit from
 
 ## Pool
-- memory pool to allocate from, ensures allocations are all contiguous
+- memory pool to allocate from, ensures allocations are all contiguous and cache friendly
 - multiple ways to iterate through allocated objects: forEach or begin/end iterator
 
-Face - example component, derived from Component and uses Pool to allocate from
+## Face (example
+- example component
+- derived from Component
+- uses Pool to allocate from so all Face objects allocated contiguously
