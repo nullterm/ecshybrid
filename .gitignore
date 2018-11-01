@@ -32,3 +32,4 @@
 *.app
 files.cache
 ecshybrid
+ecsproto.build
