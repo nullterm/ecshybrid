@@ -67,9 +67,58 @@ struct Entity {
 
 };
 
+template<typename T>
+struct Pool {
+
+	struct Node {
+		bool allocated = false;
+		unsigned char data[sizeof(T)];
+	};
+
+	Node nodes[256];
+
+	void * allocate() {
+		for ( Node & n : nodes ) {
+			if ( n.allocated ) continue;
+			n.allocated = true;
+			return n.data;
+		}
+		return nullptr;
+	}
+
+	void free(void * ptr) {
+		for ( Node & n : nodes ) {
+			if ( n.data == ptr ) {
+				n.allocated = false;
+				return;
+			}
+		}
+	}
+
+	template<typename F>
+	void forEach(F f) {
+		for ( Node & n : nodes ) {
+			if ( n.allocated ) {
+				f( (T *)n.data );
+			}
+		}
+	}
+
+};
+
 struct Face : Component {
 
+	static Pool<Face> pool;
+
 	int mouth = 0;
+
+	void * operator new(size_t size) {
+		return pool.allocate();
+	}
+
+	void operator delete(void * data) {
+		return pool.free( data );
+	}
 
 	Face(Entity * e) : Component( e ) {
 		printf( "construct Face entity %d\n", entity->id );
@@ -81,6 +130,8 @@ struct Face : Component {
 	}
 
 };
+
+Pool<Face> Face::pool;
 
 template< typename T1, typename T2 >
 void remove(T1 & list, T2 value) {
@@ -141,9 +192,9 @@ int main() {
 		}
 	}
 
-	for ( auto face : getComponents<Face>() ) {
+	Face::pool.forEach( [](Face * face) {
 		printf( "update face=%d entity %d\n", face->mouth, face->entity->id );
-	}
+	} );
 
 	if ( saved )
 		delete saved;
