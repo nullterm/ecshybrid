@@ -3,7 +3,7 @@
 
 
 
-// Face - an example component that allocates from a pool
+// Face - an example component that allocates from a pool.
 
 struct Face : Component {
 
